@@ -55,14 +55,14 @@ The application loads book data from a **CSV file** at startup, allows querying 
    - For insert → append new record.
 
 
-## 🛠️ Tools & Technologies
+## Tools & Technologies
 - **.NET Core Web API**
 - **LINQ** for queries
 - **CsvHelper (v33.1)** for CSV file reading/writing
 - **AutoMapper** for mapping between `Book` (model) and `BookDTO` (DTO with validation)
 - **Swagger/OpenAPI** for API documentation & testing
 
-## 📂 Example Endpoints
+## Example Endpoints
 - `GET /api/books?pageNumber=1&pageSize=10`
 - `GET /api/books?author=Orwell&genre=Dystopian`
 - `GET /api/books/5`
