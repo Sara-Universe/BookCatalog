@@ -10,6 +10,9 @@
         {
             CreateMap<Book, BookDTO>();
             CreateMap<BookDTO, Book>();
+
+            CreateMap<BookCreationDto, Book>();
+            CreateMap<Book, BookCreationDto>();
         }
 
     }

@@ -2,7 +2,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestApiProject.DTOs;
+using CustomValidationException = RestApiProject.Exceptions.ValidationException;
+
 using RestApiProject.Services;
+using RestApiProject.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace RestApiProject.Controllers
 {
@@ -13,15 +17,14 @@ namespace RestApiProject.Controllers
     {
 
         private readonly BookService _bookService;
-        private readonly IMapper _mapper;
+    
 
 
 
 
-        public BookController(BookService bookService, IMapper mapper)
+        public BookController(BookService bookService)
         {
             _bookService = bookService;
-            _mapper = mapper;
         }
 
        
@@ -29,60 +32,88 @@ namespace RestApiProject.Controllers
 
 
         [HttpGet]
-        public IActionResult GetfromQuery([FromQuery] string? author , [FromQuery] string? genre,
+        public IActionResult Filtering([FromQuery] string? author , 
+            [FromQuery] string? genre, [FromQuery] string ? keyword , 
             [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
+            if (pageNumber < 1)
+                throw new CustomValidationException("Page number must be greater than 0.");
 
-            if ( string.IsNullOrEmpty(author) && string.IsNullOrEmpty(genre))
-            {
-                return Ok(_bookService.GetBooks(pageNumber, pageSize));
-            }
-            
-           var result = _bookService.GetByAuthor_genre(author, genre);
+            if (pageSize < 1)
+                throw new CustomValidationException("Page size must be greater than 0.");
 
-            if ( result == null || !result.Any())
+            var books = _bookService.GetBooksFiltered(author, genre , keyword);
+            int totalCount = books.Count();
+            int totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+            if (totalPages > 0 && pageNumber > totalPages)
+                throw new CustomValidationException($"Page number {pageNumber} exceeds the total pages {totalPages}.");
+            // Apply paging
+            var pagedItems = books
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            //Build PagedResult
+            var pagedResult = new PagedResult<BookCreationDto>
             {
-                return NotFound("there are no books with these criteria");
-            }
-            return Ok(result);
+                Items = pagedItems,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = books.Count()
+            };
+
+            return Ok(pagedResult);
         }
 
         [HttpGet ("{id}")]
         public IActionResult GetByID (int id)
         {
             var book = _bookService.GetBookById(id);
-            if (book == null)
-            {
-                return NotFound($"There is no book with id {id}");
-            }
+
             return Ok(book);
         }
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public IActionResult Post([FromBody] BookDTO book)
+        public IActionResult Add([FromBody] BookDTO bookdto)
         {
-            if (book == null)
-                return BadRequest("Book body is required.");
+            if (bookdto == null)
+                return BadRequest(new { Message = "Book body is required." });
 
-            var (isSuccess, errors,createdBook) = _bookService.AddBook(book);
+            var context = new ValidationContext(bookdto, null, null);
+            var results = new List<ValidationResult>();
+            bool isValid = Validator.TryValidateObject(bookdto, context, results, true);
 
-            if (!isSuccess)
+            if (!isValid)
+            {
+                var errors = results.Select(r => r.ErrorMessage ?? "Invalid field").ToList();
                 return BadRequest(new { Errors = errors });
+            }
+
+            // Call service to create book
+            var createdBook = _bookService.AddBook(bookdto); // throws exception if any problem
             return CreatedAtAction(nameof(GetByID), new { id = createdBook.BookID }, createdBook);
         }
 
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
-        public IActionResult Put(int id, [FromBody] BookDTO bookdto)
+        public IActionResult Update(int id, [FromBody] BookDTO bookdto)
         {
             if (bookdto == null)
-                return BadRequest("Book body is required.");
+                return BadRequest(new { Message = "Book body is required." });
 
-            var (isSuccess, errors, updatedBook) = _bookService.UpdateBook(id, bookdto);
-
-            if (!isSuccess)
+            var context = new ValidationContext(bookdto, null, null);
+            var results = new List<ValidationResult>();
+            bool isValid = Validator.TryValidateObject(bookdto, context, results, true);
+            if (!isValid)
+            {
+                var errors = results.Select(r => r.ErrorMessage ?? "Invalid field").ToList();
                 return BadRequest(new { Errors = errors });
+            }
+
+            var updatedBook = _bookService.UpdateBook(id, bookdto);
+
             return Ok(updatedBook);
         }
 
@@ -90,34 +121,8 @@ namespace RestApiProject.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult Delete(int id)
         {
-    
-            var deletedbook = _bookService.DeletById(id);
-            if(deletedbook == false)
-            {
-                return NotFound($"There is no book to delete with id {id}");
-            }
-
-
-            return Ok("The book has been deleted successfully!");
-        }
-
-        [HttpGet("search")]
-
-        public IActionResult SearchbyTitle ([FromQuery] string? keyword)
-        {
-            if (keyword == null)
-            {
-                return BadRequest("You should enter a keyword");
-
-            }
-            var result = _bookService.searchByTitle(keyword);
-            if(result == null)
-            {
-                return NotFound($"There is no title that contains the keyword ({keyword})");
-            }
-
-
-            return Ok(result);
+            _bookService.DeleteById(id);
+            return NoContent();
         }
 
     }

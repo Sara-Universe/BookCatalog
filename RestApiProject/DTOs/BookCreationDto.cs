@@ -24,6 +24,8 @@ namespace RestApiProject.DTOs
         public int PublishedYear { get; set; }
 
         [Required(ErrorMessage = "Price is required")]
+        [Range(0, double.MaxValue, ErrorMessage = "Price cannot be negative")]
+
         public decimal Price { get; set; }
     }
 }

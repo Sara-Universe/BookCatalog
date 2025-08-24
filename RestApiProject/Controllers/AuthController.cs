@@ -12,11 +12,14 @@ namespace RestApiProject.Controllers
 
         private readonly JWTService _jwtService;
         private readonly UserService _userServ;
+        private readonly ILogger<BookService> _logger;
 
-        public AuthController(JWTService jwtService, UserService userServ)
+
+        public AuthController(JWTService jwtService, UserService userServ, ILogger<BookService> logger)
         {
             _jwtService = jwtService;
             _userServ = userServ;
+            _logger = logger;
         }
 
 
@@ -28,7 +31,9 @@ namespace RestApiProject.Controllers
             if (user != null && _userServ.CheckPassword(user, request.Password))
             {
                 var token = _jwtService.GenerateToken(user);
+                _logger.LogInformation($"You have logged in as: {user.Role}");
                 return Ok(new { token });
+
             }
 
             return Unauthorized("Invalid username or password");
