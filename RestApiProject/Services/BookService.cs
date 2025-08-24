@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using CsvHelper;
+using RestApiProject.Controllers;
 using RestApiProject.DTOs;
 using RestApiProject.Models;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 
@@ -11,15 +13,17 @@ namespace RestApiProject.Services
     {
         private readonly IMapper _mapper;
         private readonly string  _filePath;
-        private List<Book> _books; // in memory storage
-   
+        private readonly List<Book> _books; // in memory storage
+        private readonly ILogger<BookService> _logger;
 
 
-        public BookService (IMapper mapper, string filePath)
+
+        public BookService ( IMapper mapper, string filePath)
         {
             _mapper = mapper;
             _filePath = filePath;
             _books = LoadBooks(_filePath);
+         
         
 
 
@@ -38,7 +42,11 @@ namespace RestApiProject.Services
             }
 
             // Map DTOs to Book entities
+
             var books = _mapper.Map<List<Book>>(bookDtos);
+
+            //_logger.LogInformation("Book Catalog is loaded");
+
 
             return books;
         }
@@ -57,6 +65,7 @@ namespace RestApiProject.Services
 
 
             var booksto =  _mapper.Map<List<BookDTO>>(books);
+            //_logger.LogInformation($"Get All Books -> Country: {booksto.Count()}");
 
             return new PagedResult<BookDTO>
             {
@@ -71,7 +80,14 @@ namespace RestApiProject.Services
         {
             var book = _books.FirstOrDefault(i => i.BookID == id);
             if (book == null)
+            {
+                _logger.LogInformation($"Book with id: {id} is not found");
+
                 return null;
+
+            }
+
+            //_logger.LogInformation($"Get Book with id {book.BookID} : Title {book.Title}");
 
             return _mapper.Map<BookDTO>(book);
         }
@@ -94,10 +110,14 @@ namespace RestApiProject.Services
             }
             if(books == null)
             {
+                _logger.LogInformation($"Book/List of books with this author, genre or both are not founds ");
+
                 return null;
             }
 
             var list  =books.ToList();
+            //_logger.LogInformation($"Get Book/Books that belongs to this author {author} and/or genre {genre} -> their counts are {list.Count()}");
+
             return _mapper.Map<List<BookDTO>>(list);
             }
 
@@ -112,6 +132,8 @@ namespace RestApiProject.Services
             {
                 // return all the error messages
                 var errors = results.Select(r => r.ErrorMessage ?? "Invalid field").ToList();
+               // _logger.LogInformation($"");
+
                 return (false,errors,null);
             }
             int newId = (_books.Any()) ? _books.Max(b => b.BookID) + 1 : 1;
@@ -172,6 +194,19 @@ namespace RestApiProject.Services
             return true;
 
 
+        }
+
+
+        public List<BookDTO>? searchByTitle(string keyword)
+        {
+         
+            var result = _books.Where(i=> i.Title.Contains(keyword,StringComparison.OrdinalIgnoreCase)).ToList();
+            if (!result.Any())
+            {
+                return null;
+            }
+
+            return _mapper.Map<List<BookDTO>>(result);
         }
 
         /// <CSV Helper>
