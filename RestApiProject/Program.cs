@@ -101,8 +101,7 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-// Global exception handler (must come before routing/middleware that handles requests)
+//global exception handler -> middleware
 app.UseExceptionHandler(appBuilder =>
 {
     appBuilder.Run(async context =>
