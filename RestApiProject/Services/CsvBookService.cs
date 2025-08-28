@@ -10,10 +10,10 @@ namespace RestApiProject.Services
     {
         private readonly string _filePath;
         private readonly IMapper _mapper;
-        private readonly ILogger<BookService> _logger;
+        private readonly ILogger<CsvBookService> _logger;
 
 
-        public CsvBookService(IMapper mapper, string filePath, ILogger<BookService> logger)
+        public CsvBookService(IMapper mapper, string filePath, ILogger<CsvBookService> logger)
         {
             _filePath = filePath;
             _mapper = mapper;
@@ -22,9 +22,12 @@ namespace RestApiProject.Services
         public List<Book> LoadBooks()
        
         {
-                if (!File.Exists(_filePath))
-                    throw new FileNotFoundException($"Book file not found at path: {_filePath}");
+            if (!File.Exists(_filePath))
+            {
+                _logger.LogInformation($"Book file not found at path: {_filePath}");
 
+                throw new FileNotFoundException($"Book file not found at path: {_filePath}");
+            }
                 var fileInfo = new FileInfo(_filePath);
                 if (fileInfo.Length == 0)
                 { 

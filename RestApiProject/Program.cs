@@ -17,7 +17,7 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
     .WriteTo.Logger(lc => lc
-        .Filter.ByIncludingOnly(Matching.FromSource("RestApiProject.Services.BookService"))
+        .Filter.ByIncludingOnly(Matching.FromSource("RestApiProject.Services"))
         .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day))
     .CreateLogger();
 
@@ -51,18 +51,25 @@ string filePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "book.cs
 builder.Services.AddSingleton<CsvBookService>(sp =>
 {
     var mapper = sp.GetRequiredService<IMapper>(); // get the singleton mapper
-    var logger = sp.GetRequiredService<ILogger<BookService>>();
+    var logger = sp.GetRequiredService<ILogger<CsvBookService>>();
 
 
     return new CsvBookService(mapper, filePath, logger);
 });
-builder.Services.AddSingleton<BookService>(sp =>
+builder.Services.AddSingleton<UserService>(sp =>
 {
-    var csvService = sp.GetRequiredService<CsvBookService>();
-    var mapperInstance = sp.GetRequiredService<IMapper>();
-    var logger = sp.GetRequiredService<ILogger<BookService>>();
+    var logger = sp.GetRequiredService<ILogger<UserService>>();
 
-    return new BookService(csvService, mapperInstance, logger);
+    return new UserService(logger);
+});
+
+builder.Services.AddSingleton<CsvBookService>(sp =>
+{
+    var mapper = sp.GetRequiredService<IMapper>(); // get the singleton mapper
+    var logger = sp.GetRequiredService<ILogger<CsvBookService>>();
+
+
+    return new CsvBookService(mapper, filePath, logger);
 });
 
 
@@ -109,6 +116,8 @@ app.UseExceptionHandler(appBuilder =>
         context.Response.ContentType = "application/json";
 
         var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+
+      
 
         // Determine status code based on exception type
         int statusCode = exception switch

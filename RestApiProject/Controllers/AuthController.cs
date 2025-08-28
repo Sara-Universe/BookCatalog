@@ -27,7 +27,10 @@ namespace RestApiProject.Controllers
         public IActionResult Login([FromBody] UserDto request)
         {
             var user = _userServ.FindByUsername(request.Username);
-
+            if (user == null)
+            {
+                _logger.LogInformation($"Unauthorized:\n\tThe username is not found!!");
+            }
             if (user != null && _userServ.CheckPassword(user, request.Password))
             {
                 var token = _jwtService.GenerateToken(user);

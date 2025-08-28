@@ -33,9 +33,10 @@ namespace RestApiProject.Services
             var book = _books.FirstOrDefault(i => i.BookID == id);
             if (book == null)
             {
-                // _logger.LogInformation($"Book with id: {id} is not found");
+                 _logger.LogInformation($"Book with id: {id} is not found");
 
                 throw new NotFoundException($"Book with id {id} was not found.");
+
 
             }
              
@@ -50,7 +51,11 @@ namespace RestApiProject.Services
         {
 
             if (_books == null || !_books.Any())
+            {
+                _logger.LogInformation($"No books are available in the catalog");
+
                 throw new NotFoundException("No books are available in the catalog.");
+            }
             var books = _books.AsEnumerable();// initi
 
             if (!string.IsNullOrEmpty(author))
@@ -78,7 +83,11 @@ namespace RestApiProject.Services
         public BookCreationDto AddBook(BookDTO bookdto)
         {
             if (_books == null)
+            {
+                _logger.LogInformation($"Book list is not initialized");
+
                 throw new Exception("Book list is not initialized.");
+            }
             int newId = (_books.Any()) ? _books.Max(b => b.BookID) + 1 : 1;
             var book = _mapper.Map<Book>(bookdto);
             book.BookID = newId;
@@ -94,8 +103,12 @@ namespace RestApiProject.Services
         {
 
             var existingBook = _books.FirstOrDefault(i => i.BookID == id);
-            if (existingBook == null)
+            if (existingBook == null) { 
+
+                _logger.LogInformation($"There is no Book with ID {id}");
+            
                 throw new NotFoundException($"There is no Book with ID {id}.");
+            }
              // Copy DTO properties to existing book
             _mapper.Map(bookdto, existingBook);
             existingBook.BookID = id; // to ensure that ID is not overwritten
@@ -111,6 +124,8 @@ namespace RestApiProject.Services
             var deletedBook = _books.FirstOrDefault(i => i.BookID == id);
             if (deletedBook == null)
             {
+                _logger.LogInformation($"Book with ID {id} was not found");
+
                 throw new NotFoundException($"Book with ID {id} was not found.");
             }
             _books.Remove(deletedBook);

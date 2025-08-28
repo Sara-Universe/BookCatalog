@@ -1,9 +1,18 @@
-﻿using RestApiProject.Models;
+﻿using AutoMapper;
+using RestApiProject.Models;
 
 namespace RestApiProject.Services
 {
     public class UserService
     {
+        private readonly ILogger<UserService> _logger;
+
+
+        public UserService(ILogger<UserService> logger)
+        {
+          
+            _logger = logger;
+        }
         // This is your in-memory user storage
         private readonly List<User> _users = new()
     {
@@ -20,8 +29,17 @@ namespace RestApiProject.Services
         // Check if the username and  password match
         public bool CheckPassword(User user, string password)
         {
-            if (user == null) return false;
-            return user.Password == password;
+            if (user == null)
+                 return false;
+            
+         if (user.Password != password)
+            {
+                _logger.LogInformation($"Unauthorized:\n\tInvalid password");
+                return false;
+
+            }
+
+            return true;
         }
     }
 }
