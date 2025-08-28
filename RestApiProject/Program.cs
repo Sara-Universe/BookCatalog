@@ -101,7 +101,7 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-//global exception handler -> middleware
+//global exception handler (middleware)
 app.UseExceptionHandler(appBuilder =>
 {
     appBuilder.Run(async context =>
