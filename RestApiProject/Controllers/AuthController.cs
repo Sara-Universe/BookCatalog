@@ -11,22 +11,25 @@ namespace RestApiProject.Controllers
     {
 
         private readonly JWTService _jwtService;
-        private readonly UserService _userServ;
-        private readonly ILogger<BookService> _logger;
+        private readonly UserLoginService _userServ;
+        private readonly ILogger<BookController> _logger;
 
 
-        public AuthController(JWTService jwtService, UserService userServ, ILogger<BookService> logger)
+        public AuthController(JWTService jwtService, UserLoginService userServ, ILogger<BookController> logger)
         {
             _jwtService = jwtService;
             _userServ = userServ;
             _logger = logger;
+
         }
 
 
         [HttpPost("login")]
-        public IActionResult Login([FromBody] UserDto request)
+        public IActionResult Login([FromBody] LoginRequestDto request)
         {
             var user = _userServ.FindByUsername(request.Username);
+
+            _logger.LogInformation($"Login attempt for user: {request.Username}");
             if (user == null)
             {
                 _logger.LogInformation($"Unauthorized:\n\tThe username is not found!!");

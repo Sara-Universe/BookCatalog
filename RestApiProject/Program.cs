@@ -1,10 +1,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using RestApiProject.Exceptions;
 using RestApiProject.Profiles;
 using RestApiProject.Services;
 using Serilog;
@@ -17,17 +14,25 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
     .WriteTo.Logger(lc => lc
-        .Filter.ByIncludingOnly(Matching.FromSource("RestApiProject.Services"))
+        .Filter.ByIncludingOnly(
+    ev => Matching.FromSource("RestApiProject.Services")(ev) ||
+          Matching.FromSource("RestApiProject.Controllers")(ev)
+)
         .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day))
     .CreateLogger();
 
-
+////////////////////////////////////////////////////////////////////////
+///
 var builder = WebApplication.CreateBuilder(args);
 
+
+//////////////////////////////////////////////////////
 // Create MapperConfiguration
 var mapperConfig = new MapperConfiguration(cfg =>
 {
     cfg.AddProfile<BookProfile>();
+    cfg.AddProfile<UserProfile>();
+
 });
 
 // Create IMapper instance
@@ -35,7 +40,7 @@ IMapper mapper = mapperConfig.CreateMapper();
 
 // Register it as a singleton
 builder.Services.AddSingleton(mapper);
-
+/////////////////////////////////////////////////////////////////////////
 
 // Add services to the container.
 
@@ -45,6 +50,16 @@ builder.Host.UseSerilog();
 builder.Logging.ClearProviders(); // remove default console logging
 builder.Logging.AddSerilog();     // use only Serilog
 
+var userFilePath = Path.Combine(builder.Environment.ContentRootPath, "Data", "user.csv");
+
+// Register CsvUserService as a singleton
+builder.Services.AddSingleton<CsvUserService>(sp =>
+{
+    var mapper = sp.GetRequiredService<AutoMapper.IMapper>();
+    var logger = sp.GetRequiredService<ILogger<CsvUserService>>();
+    return new CsvUserService(mapper, userFilePath, logger);
+});
+////////////////////////////////////////////////////////////////////////
 
 string filePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "book.csv");
 
@@ -56,23 +71,12 @@ builder.Services.AddSingleton<CsvBookService>(sp =>
 
     return new CsvBookService(mapper, filePath, logger);
 });
-builder.Services.AddSingleton<UserService>(sp =>
-{
-    var logger = sp.GetRequiredService<ILogger<UserService>>();
+/////////////////////////////////////////////////////
+builder.Services.AddScoped<UserService>();
 
-    return new UserService(logger);
-});
-
-builder.Services.AddSingleton<CsvBookService>(sp =>
-{
-    var mapper = sp.GetRequiredService<IMapper>(); // get the singleton mapper
-    var logger = sp.GetRequiredService<ILogger<CsvBookService>>();
-
-
-    return new CsvBookService(mapper, filePath, logger);
-});
-
-
+builder.Services.AddScoped<BookService>();
+builder.Services.AddScoped<UserLoginService>();
+////////////////////////////////////////////////////////////////////////
 // Add JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
@@ -92,18 +96,14 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     };
 });
-
 builder.Services.AddSingleton<JWTService>();
-builder.Services.AddScoped<UserService>();
-
+///////////////////////////////////////////////////////////////////
 
 builder.Services.AddAuthorization();
-
-
 builder.Services.AddControllers();
 
 
-
+//////////////////////////////////////////////////////////////////
 
 
 var app = builder.Build();
@@ -137,6 +137,7 @@ app.UseExceptionHandler(appBuilder =>
         await context.Response.WriteAsync(result);
     });
 });
+//////////////////////////////////////////////////////////////////
 
 app.UseHttpsRedirection();
 

@@ -1,0 +1,4 @@
+Id,Username,Password,Role,FavoriteBookIds,WishlistBookIds
+1,admin,admin123,Admin,,
+2,sara,user123,User,6;7,
+3,john,user456,User,3;9,3
