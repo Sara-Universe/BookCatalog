@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestApiProject.Services;
 using System.Security.Claims;
@@ -8,7 +7,7 @@ namespace RestApiProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Require authentication
+    [Authorize] 
     public class UserController : ControllerBase
     {
         private readonly UserService _userService;
@@ -22,7 +21,6 @@ namespace RestApiProject.Controllers
 
         private int GetCurrentUserId()
         {
-            // JWT should include the user ID as a claim
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim))
                 throw new UnauthorizedAccessException("User ID claim missing in token.");
@@ -33,9 +31,12 @@ namespace RestApiProject.Controllers
         private void EnsureCurrentUser(int userId)
         {
             var currentUserId = GetCurrentUserId();
-            if (currentUserId != userId)
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            // Admin can access anyone, normal users only themselves
+            if (role == "User" && currentUserId != userId)
             {
-                throw new UnauthorizedAccessException("You cannot modify another user's list.");
+                throw new UnauthorizedAccessException("You cannot access another user's data.");
             }
         }
 
@@ -45,8 +46,12 @@ namespace RestApiProject.Controllers
         {
             EnsureCurrentUser(userId);
 
-            _userService.AddFavorite(userId, bookId);
-            return Ok($"Book {bookId} added to favorites.");
+            var bookdto =  _userService.AddFavorite(userId, bookId);
+            if (bookdto == null)
+            {
+                return Conflict($"Book {bookId} is already in favorites.");
+            }
+            return Ok(bookdto);
         }
 
         [HttpGet("{userId}/favorites")]
@@ -63,7 +68,11 @@ namespace RestApiProject.Controllers
         {
             EnsureCurrentUser(userId);
 
-            _userService.RemoveFavorite(userId, bookId);
+            bool flag = _userService.RemoveFavorite(userId, bookId);
+            if (!flag)
+            {
+                return NotFound($"Book {bookId} not found in favorites.");
+            }
             return Ok($"Book {bookId} removed from favorites.");
         }
 
@@ -73,8 +82,12 @@ namespace RestApiProject.Controllers
         {
             EnsureCurrentUser(userId);
 
-            _userService.AddToWishlist(userId, bookId);
-            return Ok($"Book {bookId} added to wishlist.");
+            var bookdto=  _userService.AddToWishlist(userId, bookId);
+            if (bookdto == null)
+            {
+                return Conflict($"Book {bookId} is already in wishlist.");
+            }
+            return Ok(bookdto);
         }
 
         [HttpGet("{userId}/wishlist")]
@@ -91,7 +104,11 @@ namespace RestApiProject.Controllers
         {
             EnsureCurrentUser(userId);
 
-            _userService.RemoveFromWishlist(userId, bookId);
+            bool flag = _userService.RemoveFromWishlist(userId, bookId);
+            if (!flag)
+            {
+                return NotFound($"Book {bookId} not found in wishlist.");
+            }
             return Ok($"Book {bookId} removed from wishlist.");
         }
 
@@ -101,7 +118,11 @@ namespace RestApiProject.Controllers
         {
             EnsureCurrentUser(userId);
 
-            _userService.MoveWishlistToFavorites(userId, bookId);
+            bool flag = _userService.MoveWishlistToFavorites(userId, bookId);
+            if (!flag)
+            {
+                return Ok($"Book {bookId} is already in favorites.");
+            }
             return Ok($"Book {bookId} moved from wishlist to favorites.");
         }
     }

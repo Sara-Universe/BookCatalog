@@ -4,8 +4,6 @@ namespace RestApiProject.DTOs
 {
     public class BookDTO
     {
-  
-
         [Required(ErrorMessage = "Title is required")]
         [StringLength(100, ErrorMessage = "Title cannot be longer than 100 characters")]
         public string Title { get; set; }

@@ -11,6 +11,12 @@ namespace RestApiProject.Models
         public string Genre { get; set; }
         public int PublishedYear { get; set; }
         public decimal Price { get; set; }
- 
+
+
+        // Borrowing
+        public bool IsBorrowed { get; set; } = false;
+        public int? BorrowedByUserId { get; set; }
+        public DateTime? DueDate { get; set; }
+
     }
 }

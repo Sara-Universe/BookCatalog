@@ -1,4 +1,4 @@
-﻿namespace RestApiProject
+﻿namespace RestApiProject.Models
 {
     public class PagedResult<T>
     {

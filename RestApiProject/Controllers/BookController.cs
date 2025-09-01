@@ -1,35 +1,25 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestApiProject.DTOs;
 using CustomValidationException = RestApiProject.Exceptions.ValidationException;
-
 using RestApiProject.Services;
-using RestApiProject.Models;
 using System.ComponentModel.DataAnnotations;
+using RestApiProject.Models;
 
 namespace RestApiProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]//  all endpoints require authentication
+    [Authorize]
     public class BookController : ControllerBase
     {
 
         private readonly BookService _bookService;
     
-
-
-
-
         public BookController(BookService bookService)
         {
             _bookService = bookService;
         }
-
-       
-        //default value if the user didnot specify the page number and size it will show page 1 with 10 books
-
 
         [HttpGet]
         public IActionResult Filtering([FromQuery] string? author , 
@@ -48,6 +38,7 @@ namespace RestApiProject.Controllers
 
             if (totalPages > 0 && pageNumber > totalPages)
                 throw new CustomValidationException($"Page number {pageNumber} exceeds the total pages {totalPages}.");
+
             // Apply paging
             var pagedItems = books
                 .Skip((pageNumber - 1) * pageSize)
@@ -91,8 +82,7 @@ namespace RestApiProject.Controllers
                 return BadRequest(new { Errors = errors });
             }
 
-            // Call service to create book
-            var createdBook = _bookService.AddBook(bookdto); // throws exception if any problem
+            var createdBook = _bookService.AddBook(bookdto);
             return CreatedAtAction(nameof(GetByID), new { id = createdBook.BookID }, createdBook);
         }
 
@@ -124,6 +114,5 @@ namespace RestApiProject.Controllers
             _bookService.DeleteById(id);
             return NoContent();
         }
-
     }
 }

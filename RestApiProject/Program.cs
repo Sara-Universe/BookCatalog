@@ -31,8 +31,6 @@ var builder = WebApplication.CreateBuilder(args);
 var mapperConfig = new MapperConfiguration(cfg =>
 {
     cfg.AddProfile<BookProfile>();
-    cfg.AddProfile<UserProfile>();
-
 });
 
 // Create IMapper instance
@@ -71,11 +69,15 @@ builder.Services.AddSingleton<CsvBookService>(sp =>
 
     return new CsvBookService(mapper, filePath, logger);
 });
-/////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////
+
+
 builder.Services.AddScoped<UserService>();
 
 builder.Services.AddScoped<BookService>();
 builder.Services.AddScoped<UserLoginService>();
+builder.Services.AddSingleton<BorrowService>();
 ////////////////////////////////////////////////////////////////////////
 // Add JWT Authentication
 builder.Services.AddAuthentication(options =>

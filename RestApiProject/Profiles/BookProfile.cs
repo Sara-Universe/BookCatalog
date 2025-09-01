@@ -5,7 +5,6 @@
     using RestApiProject.DTOs;
     public class BookProfile: Profile
     {
-
         public BookProfile() 
         {
             CreateMap<Book, BookDTO>();
@@ -13,6 +12,9 @@
 
             CreateMap<BookCreationDto, Book>();
             CreateMap<Book, BookCreationDto>();
+
+            CreateMap<BookOutputDto, Book>();
+            CreateMap<Book, BookOutputDto>();
         }
 
     }
