@@ -8,20 +8,25 @@ namespace RestApiProject.Services
         private readonly CsvBookService _csvBookService;
         private readonly CsvUserService _csvUserService;
         private readonly ILogger<BorrowService> _logger;
+        private readonly CsvBorrowService _csvBorrowService;
+        private readonly List<BorrowRecord> _history;
+
 
         private readonly List<Book> _books;
         private readonly List<User> _users;
 
-        private readonly List<BorrowRecord> _history = [];
 
-        public BorrowService(CsvBookService csvBookService, CsvUserService csvUserService, ILogger<BorrowService> logger)
+        public BorrowService(CsvBookService csvBookService, CsvUserService csvUserService, ILogger<BorrowService> logger, CsvBorrowService csvBorrowService)
         {
             _csvBookService = csvBookService;
             _csvUserService = csvUserService;
             _logger = logger;
+            _csvBorrowService = csvBorrowService;
 
             _books = _csvBookService.LoadBooks();
             _users = _csvUserService.LoadUsers();
+            _history = _csvBorrowService.LoadBorrowHistory(); // Load saved history
+
 
         }
 
@@ -49,16 +54,20 @@ namespace RestApiProject.Services
 
             book.IsBorrowed = true;
             book.BorrowedByUserId = userId;
-            book.DueDate = DateTime.UtcNow.AddDays(14); 
+            book.DueDate = DateTime.UtcNow.AddDays(14);
 
-            _history.Add(new BorrowRecord
+            var record = new BorrowRecord
             {
                 UserId = userId,
                 BookId = bookId,
                 Action = "Borrow",
                 Timestamp = DateTime.UtcNow,
                 DueDate = book.DueDate
-            });
+            };
+
+            _history.Add(record);
+            _csvBorrowService.AddBorrowRecord(record);
+
 
             _logger.LogInformation($"User {user.Username} borrowed book {book.Title}");
 
@@ -89,15 +98,17 @@ namespace RestApiProject.Services
             book.BorrowedByUserId = null;
             book.DueDate = null;
 
-            _history.Add(new BorrowRecord
+            var record = new BorrowRecord
             {
                 UserId = userId,
                 BookId = bookId,
                 Action = "Return",
                 Timestamp = DateTime.UtcNow,
                 IsOverdue = isOverdue
+            };
 
-            });
+            _history.Add(record);
+            _csvBorrowService.AddBorrowRecord(record);
 
             _logger.LogInformation($"User {userId} returned book {book.Title}. Overdue: {isOverdue}");
         }

@@ -1,0 +1,5 @@
+UserId,BookId,Action,Timestamp,DueDate,IsOverdue
+2,1,Borrow,09/01/2025 13:42:30,09/15/2025 13:42:30,False
+2,4,Borrow,09/01/2025 13:42:47,09/15/2025 13:42:47,False
+2,4,Return,09/01/2025 13:42:53,,False
+2,1,Return,09/01/2025 13:43:37,,False

@@ -1,4 +1,6 @@
-﻿using RestApiProject.Models;
+﻿using CsvHelper;
+using CsvHelper.Configuration;
+using RestApiProject.Models;
 using System.Globalization;
 
 namespace RestApiProject.Services
@@ -8,43 +10,73 @@ namespace RestApiProject.Services
         private readonly string _filePath;
         private readonly ILogger<CsvBorrowService> _logger;
 
-        public CsvBorrowService(string filePath , ILogger<CsvBorrowService> logger)
+        public CsvBorrowService(string filePath, ILogger<CsvBorrowService> logger)
         {
             _filePath = filePath;
-
-            if (!File.Exists(_filePath))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
-                File.WriteAllText(_filePath, "UserId,BookId,Action,Timestamp\n");
-            }
             _logger = logger;
         }
 
+        // Load borrow history from CSV
         public List<BorrowRecord> LoadBorrowHistory()
         {
-            var records = new List<BorrowRecord>();
-
-            foreach (var line in File.ReadAllLines(_filePath).Skip(1)) // skip header
+            if (!File.Exists(_filePath))
             {
-                if (string.IsNullOrWhiteSpace(line)) continue;
-                var parts = line.Split(',');
-
-                records.Add(new BorrowRecord
-                {
-                    UserId = int.Parse(parts[0]),
-                    BookId = int.Parse(parts[1]),
-                    Action = parts[2],
-                    Timestamp = DateTime.Parse(parts[3], CultureInfo.InvariantCulture)
-                });
+                _logger.LogInformation($"Borrow history file not found at path: {_filePath}. Creating new one.");
+                return new List<BorrowRecord>();
             }
 
+            var fileInfo = new FileInfo(_filePath);
+            if (fileInfo.Length == 0)
+            {
+                _logger.LogInformation("Borrow history file is empty.");
+                return new List<BorrowRecord>();
+            }
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                HasHeaderRecord = true, // expect headers if file isn’t empty
+                MissingFieldFound = null, // ignore missing fields
+                HeaderValidated = null    // ignore extra headers
+            };
+
+            using var reader = new StreamReader(_filePath);
+            using var csv = new CsvReader(reader, config);
+
+            var records = csv.GetRecords<BorrowRecord>().ToList();
+            _logger.LogInformation($"Loaded {records.Count} borrow records from history.");
             return records;
         }
-
         public void AddBorrowRecord(BorrowRecord record)
         {
-            var line = $"{record.UserId},{record.BookId},{record.Action},{record.Timestamp:o}";
-            File.AppendAllText(_filePath, line + Environment.NewLine);
+            bool fileExists = File.Exists(_filePath);
+            bool isEmpty = !fileExists || new FileInfo(_filePath).Length == 0;
+
+            if (isEmpty)
+            {
+                // First time: create the file, write header + record
+                using var writer = new StreamWriter(_filePath, append: false);
+                using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+
+                csv.WriteHeader<BorrowRecord>();
+                csv.NextRecord();
+                csv.WriteRecord(record);
+                csv.NextRecord();
+            }
+            else
+            {
+                // Append only the record
+                using var writer = new StreamWriter(_filePath, append: true);
+                using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+
+                csv.WriteRecord(record);
+                csv.NextRecord();
+            }
+
+            _logger.LogInformation(
+                $"Borrow record added: User {record.UserId}, Book {record.BookId}, Action {record.Action}, Timestamp {record.Timestamp}"
+            );
         }
+
+
     }
 }

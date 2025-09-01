@@ -70,6 +70,19 @@ builder.Services.AddSingleton<CsvBookService>(sp =>
     return new CsvBookService(mapper, filePath, logger);
 });
 
+
+
+
+string filePathborrow = Path.Combine(Directory.GetCurrentDirectory(), "Data", "history.csv");
+
+builder.Services.AddSingleton<CsvBorrowService>(sp =>
+{
+    var logger = sp.GetRequiredService<ILogger<CsvBorrowService>>();
+
+
+    return new CsvBorrowService(filePathborrow, logger);
+});
+
 ////////////////////////////////////////////////////////////////////////
 
 
@@ -77,7 +90,17 @@ builder.Services.AddScoped<UserService>();
 
 builder.Services.AddScoped<BookService>();
 builder.Services.AddScoped<UserLoginService>();
-builder.Services.AddSingleton<BorrowService>();
+
+builder.Services.AddSingleton<BorrowService>(sp =>
+{
+    var bookService = sp.GetRequiredService<CsvBookService>();
+    var userService = sp.GetRequiredService<CsvUserService>();
+    var borrowService = sp.GetRequiredService<CsvBorrowService>();
+    var logger = sp.GetRequiredService<ILogger<BorrowService>>();
+
+    return new BorrowService(bookService, userService, logger, borrowService);
+});
+
 ////////////////////////////////////////////////////////////////////////
 // Add JWT Authentication
 builder.Services.AddAuthentication(options =>
