@@ -39,7 +39,7 @@ namespace RestApiProject.Services
         }
         private void ValidateBookExists(int bookId)
         {
-            if (!_books.Any(b => b.Id == bookId))
+            if (!_books.Any(b => b.BookID == bookId))
             {
                 _logger.LogInformation($"Book with id: {bookId} is not found");
 
@@ -52,22 +52,15 @@ namespace RestApiProject.Services
             ValidateBookExists(bookId);
 
             var user = GetUserById(userId);
-            var book = _books.FirstOrDefault(b => b.Id == bookId);
-            if (book == null)
-            {
-                throw new NotFoundException($"Book with id {bookId} not found");
-            }
 
-            if (!user.FavoriteBooks.Any(b => b.Id == bookId))
-
+            if (!user.FavoriteBookIds.Contains(bookId))
             {
-              
-                user.FavoriteBooks.Add(book);
+                user.FavoriteBookIds.Add(bookId);
                 _csvUserService.SaveUsers(_users);
                 _logger.LogInformation($"Book {bookId} added to favorites for user {user.Username}");
-                var bookdto = _mapper.Map<BookOutputDto>(book);
 
-                return bookdto;
+                var book = _books.FirstOrDefault(b => b.BookID == bookId);
+                return _mapper.Map<BookOutputDto>(book);
             }
 
             return null;
@@ -80,8 +73,8 @@ namespace RestApiProject.Services
                 throw new NotFoundException("User not found");
 
             var favoriteBooks = _books
-           .Where(b => user.FavoriteBooks.Any(fb => fb.Id == b.Id))
-           .ToList();
+                .Where(b => user.FavoriteBookIds.Contains(b.BookID))
+                .ToList();
 
             return _mapper.Map<List<BookOutputDto>>(favoriteBooks);
         }
@@ -89,16 +82,12 @@ namespace RestApiProject.Services
 
         public bool RemoveFavorite(int userId, int bookId)
         {
-            ValidateBookExists(bookId);
+            ValidateBookExists(bookId); 
 
             var user = GetUserById(userId);
-            var book = _books.FirstOrDefault(u => u.Id == bookId);
 
-            if (book != null)
+            if (user.FavoriteBookIds.Remove(bookId))
             {
-       
-
-                user.FavoriteBooks.Remove(book);
                 _csvUserService.SaveUsers(_users);
                 _logger.LogInformation($"Book {bookId} removed from favorites for user {user.Username}");
                 return true;
@@ -112,21 +101,15 @@ namespace RestApiProject.Services
             ValidateBookExists(bookId);
 
             var user = GetUserById(userId);
-            var book = _books.FirstOrDefault(b => b.Id == bookId);
-            if (book == null)
-            {
-                throw new NotFoundException($"Book with id {bookId} not found");
-            }
-            if (!user.FavoriteBooks.Any(b => b.Id == bookId))
-            {
 
-               
-                user.WishlistBooks.Add(book);
+            if (!user.WishlistBookIds.Contains(bookId))
+            {
+                user.WishlistBookIds.Add(bookId);
                 _csvUserService.SaveUsers(_users);
                 _logger.LogInformation($"Book {bookId} added to wishlist for user {user.Username}");
-                var bookdto = _mapper.Map<BookOutputDto>(book);
 
-                return bookdto;
+                var book = _books.FirstOrDefault(b => b.BookID == bookId);
+                return _mapper.Map<BookOutputDto>(book);
             }
 
             return null;
@@ -139,8 +122,8 @@ namespace RestApiProject.Services
                 throw new NotFoundException("User not found");
 
             var wishlistBooks = _books
-            .Where(b => user.WishlistBooks.Any(fb => fb.Id == b.Id))
-            .ToList();
+                .Where(b => user.WishlistBookIds.Contains(b.BookID))
+                .ToList();
 
             return _mapper.Map<List<BookOutputDto>>(wishlistBooks);
         }
@@ -148,51 +131,39 @@ namespace RestApiProject.Services
 
         public bool RemoveFromWishlist(int userId, int bookId)
         {
-            ValidateBookExists(bookId);
+            ValidateBookExists(bookId); 
 
             var user = GetUserById(userId);
 
-            var book = _books.FirstOrDefault(u => u.Id == bookId);
-
-            if (book != null)
+            if (user.WishlistBookIds.Remove(bookId))
             {
-                
-
-                user.WishlistBooks.Remove(book);
                 _csvUserService.SaveUsers(_users);
-                _logger.LogInformation($"Book {bookId} removed from favorites for user {user.Username}");
+                _logger.LogInformation($"Book {bookId} removed from wishlist for user {user.Username}");
                 return true;
             }
-
             return false;
         }
+
+        //move book from wishlist to favorites
         public bool MoveWishlistToFavorites(int userId, int bookId)
         {
-            ValidateBookExists(bookId);
+            ValidateBookExists(bookId); 
 
             var user = GetUserById(userId);
-            if (user == null)
-                throw new NotFoundException("User not found");
+            bool flag = user.WishlistBookIds.Remove(bookId);
+            if (!flag)
+                throw new NotFoundException($"Book with id {bookId} does not exist in the Whishlist");
 
-            // Find book in wishlist
-            var bookInWishlist = user.WishlistBooks.FirstOrDefault(b => b.Id == bookId);
-            if (bookInWishlist == null)
-                throw new NotFoundException($"Book with id {bookId} does not exist in the Wishlist");
+                if (!user.FavoriteBookIds.Contains(bookId))
+                {
+                    user.FavoriteBookIds.Add(bookId);
+                    _logger.LogInformation($"Book {bookId} moved from wishlist to favorites for user {user.Username}");
+                     return true;
 
-            // Remove from wishlist
-            user.WishlistBooks.Remove(bookInWishlist);
-
-            // Add to favorites if not already there
-            if (!user.FavoriteBooks.Any(b => b.Id == bookId))
-            {
-                user.FavoriteBooks.Add(bookInWishlist);
-                _logger.LogInformation($"Book {bookId} moved from wishlist to favorites for user {user.Username}");
-                _csvUserService.SaveUsers(_users);  // Save after changes
-                return true;
-            }
-            _csvUserService.SaveUsers(_users);  // Save even if already in favorites
+                 }
+           _csvUserService.SaveUsers(_users);
+            
             return false;
         }
-
     }
-}
+ }

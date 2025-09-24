@@ -30,7 +30,7 @@ namespace RestApiProject.Services
   
         public BookCreationDto GetBookById(int id)
         {
-            var book = _books.FirstOrDefault(i => i.Id == id);
+            var book = _books.FirstOrDefault(i => i.BookID == id);
             if (book == null)
             {
                  _logger.LogInformation($"Book with id: {id} is not found");
@@ -40,7 +40,7 @@ namespace RestApiProject.Services
 
             }
              
-            _logger.LogInformation($"Get Book with id {book.Id} : Title {book.Title}");
+            _logger.LogInformation($"Get Book with id {book.BookID} : Title {book.Title}");
 
             return _mapper.Map<BookCreationDto>(book);
         }
@@ -88,9 +88,9 @@ namespace RestApiProject.Services
 
                 throw new Exception("Book list is not initialized.");
             }
-            int newId = (_books.Any()) ? _books.Max(b => b.Id) + 1 : 1;
+            int newId = (_books.Any()) ? _books.Max(b => b.BookID) + 1 : 1;
             var book = _mapper.Map<Book>(bookdto);
-            book.Id = newId;
+            book.BookID = newId;
             _books.Add(book);//add to list
             _csvService.AddBook(book);
             _logger.LogInformation($"New Book has been added with id {newId}");
@@ -102,7 +102,7 @@ namespace RestApiProject.Services
         public BookCreationDto UpdateBook(int id, BookDTO bookdto)
         {
 
-            var existingBook = _books.FirstOrDefault(i => i.Id == id);
+            var existingBook = _books.FirstOrDefault(i => i.BookID == id);
             if (existingBook == null) { 
 
                 _logger.LogInformation($"There is no Book with ID {id}");
@@ -111,7 +111,7 @@ namespace RestApiProject.Services
             }
              // Copy DTO properties to existing book
             _mapper.Map(bookdto, existingBook);
-            existingBook.Id = id; // to ensure that ID is not overwritten
+            existingBook.BookID = id; // to ensure that ID is not overwritten
             _csvService.UpdateBook(existingBook);
             var result = _mapper.Map<BookCreationDto>(existingBook);
             _logger.LogInformation($"Book with id {id} has beedn updated");
@@ -121,7 +121,7 @@ namespace RestApiProject.Services
 
         public bool DeleteById(int id)
         {
-            var deletedBook = _books.FirstOrDefault(i => i.Id == id);
+            var deletedBook = _books.FirstOrDefault(i => i.BookID == id);
             if (deletedBook == null)
             {
                 _logger.LogInformation($"Book with ID {id} was not found");

@@ -15,8 +15,8 @@ namespace RestApiProject.DTOs
         public string Role { get; set; } = "User";
 
         // Book IDs stored in CSV as "1;2;3"
-        public List<BookOutputDto> FavoriteBookIds { get; set; } = new();
-        public List<BookOutputDto> WishlistBookIds { get; set; } = new();
+        public List<int> FavoriteBookIds { get; set; } = new();
+        public List<int> WishlistBookIds { get; set; } = new();
     }
 
 }
