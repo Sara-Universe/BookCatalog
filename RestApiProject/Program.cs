@@ -1,13 +1,16 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using RestApiProject.Data;
 using RestApiProject.Profiles;
 using RestApiProject.Services;
 using Serilog;
 using Serilog.Filters;
 using System.Text;
 using System.Text.Json;
+using RestApiProject.Data;
 
 //logger configuration and setup
 Log.Logger = new LoggerConfiguration()
@@ -39,7 +42,8 @@ IMapper mapper = mapperConfig.CreateMapper();
 // Register it as a singleton
 builder.Services.AddSingleton(mapper);
 /////////////////////////////////////////////////////////////////////////
-
+builder.Services.AddDbContext<MyDbContext>(options =>
+options.UseSqlServer(builder.Configuration.GetConnectionString("MyConnectionString")));
 // Add services to the container.
 
 builder.Services.AddOpenApi();

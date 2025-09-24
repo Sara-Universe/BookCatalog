@@ -19,28 +19,28 @@ namespace RestApiProject.Services
 
         public BookService(CsvBookService csvService, IMapper mapper, ILogger<BookService> logger)
         {
-            _csvService = csvService;      
-            _mapper = mapper;    
+            _csvService = csvService;
+            _mapper = mapper;
             _logger = logger;
-            _books = _csvService.LoadBooks(); 
+            _books = _csvService.LoadBooks();
 
         }
 
 
-  
+
         public BookCreationDto GetBookById(int id)
         {
-            var book = _books.FirstOrDefault(i => i.BookID == id);
+            var book = _books.FirstOrDefault(i => i.Id == id);
             if (book == null)
             {
-                 _logger.LogInformation($"Book with id: {id} is not found");
+                _logger.LogInformation($"Book with id: {id} is not found");
 
                 throw new NotFoundException($"Book with id {id} was not found.");
 
 
             }
-             
-            _logger.LogInformation($"Get Book with id {book.BookID} : Title {book.Title}");
+
+            _logger.LogInformation($"Get Book with id {book.Id} : Title {book.Title}");
 
             return _mapper.Map<BookCreationDto>(book);
         }
@@ -88,9 +88,9 @@ namespace RestApiProject.Services
 
                 throw new Exception("Book list is not initialized.");
             }
-            int newId = (_books.Any()) ? _books.Max(b => b.BookID) + 1 : 1;
+            int newId = (_books.Any()) ? _books.Max(b => b.Id) + 1 : 1;
             var book = _mapper.Map<Book>(bookdto);
-            book.BookID = newId;
+            book.Id = newId;
             _books.Add(book);//add to list
             _csvService.AddBook(book);
             _logger.LogInformation($"New Book has been added with id {newId}");
@@ -102,16 +102,17 @@ namespace RestApiProject.Services
         public BookCreationDto UpdateBook(int id, BookDTO bookdto)
         {
 
-            var existingBook = _books.FirstOrDefault(i => i.BookID == id);
-            if (existingBook == null) { 
+            var existingBook = _books.FirstOrDefault(i => i.Id == id);
+            if (existingBook == null)
+            {
 
                 _logger.LogInformation($"There is no Book with ID {id}");
-            
+
                 throw new NotFoundException($"There is no Book with ID {id}.");
             }
-             // Copy DTO properties to existing book
+            // Copy DTO properties to existing book
             _mapper.Map(bookdto, existingBook);
-            existingBook.BookID = id; // to ensure that ID is not overwritten
+            existingBook.Id = id; // to ensure that ID is not overwritten
             _csvService.UpdateBook(existingBook);
             var result = _mapper.Map<BookCreationDto>(existingBook);
             _logger.LogInformation($"Book with id {id} has beedn updated");
@@ -121,7 +122,7 @@ namespace RestApiProject.Services
 
         public bool DeleteById(int id)
         {
-            var deletedBook = _books.FirstOrDefault(i => i.BookID == id);
+            var deletedBook = _books.FirstOrDefault(i => i.Id == id);
             if (deletedBook == null)
             {
                 _logger.LogInformation($"Book with ID {id} was not found");
@@ -129,7 +130,7 @@ namespace RestApiProject.Services
                 throw new NotFoundException($"Book with ID {id} was not found.");
             }
             _books.Remove(deletedBook);
-           _csvService.DeleteBook(id);
+            _csvService.DeleteBook(id);
             _logger.LogInformation($"Book with id {id} has been deleted");
 
             return true;

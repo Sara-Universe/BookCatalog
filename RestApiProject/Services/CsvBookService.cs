@@ -20,7 +20,7 @@ namespace RestApiProject.Services
             _logger = logger;
         }
         public List<Book> LoadBooks()
-       
+
         {
             if (!File.Exists(_filePath))
             {
@@ -28,12 +28,12 @@ namespace RestApiProject.Services
 
                 throw new FileNotFoundException($"Book file not found at path: {_filePath}");
             }
-                var fileInfo = new FileInfo(_filePath);
-                if (fileInfo.Length == 0)
-                { 
-                    // Empty file
-                    return new List<Book>();
-                }
+            var fileInfo = new FileInfo(_filePath);
+            if (fileInfo.Length == 0)
+            {
+                // Empty file
+                return new List<Book>();
+            }
             using var reader = new StreamReader(_filePath);
             using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
 
@@ -43,9 +43,9 @@ namespace RestApiProject.Services
             _logger.LogInformation("Book Catalog is loaded");
 
             return book;
-                
-            }
-        
+
+        }
+
         public void AddBook(Book newBook)
         {
             bool fileExists = File.Exists(_filePath);
@@ -78,12 +78,12 @@ namespace RestApiProject.Services
 
                 foreach (var record in records)
                 {
-                    if (record.BookID == updatedBook.BookID)
+                    if (record.Id == updatedBook.Id)
                     {
                         record.Title = updatedBook.Title;
                         record.Author = updatedBook.Author;
                         record.Genre = updatedBook.Genre;
-                        record.PublishedYear= updatedBook.PublishedYear;
+                        record.PublishedYear = updatedBook.PublishedYear;
                         record.Price = updatedBook.Price;
                     }
                 }
@@ -105,7 +105,7 @@ namespace RestApiProject.Services
             using (var writer = new StreamWriter(tempFile))
             using (var csvWriter = new CsvWriter(writer, CultureInfo.InvariantCulture))
             {
-                var records = csvReader.GetRecords<Book>().Where(b => b.BookID != id).ToList();
+                var records = csvReader.GetRecords<Book>().Where(b => b.Id != id).ToList();
                 csvWriter.WriteRecords(records);
             }
 

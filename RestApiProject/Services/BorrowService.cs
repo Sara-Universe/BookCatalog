@@ -39,7 +39,7 @@ namespace RestApiProject.Services
                 throw new NotFoundException("User not found");
             }
 
-            var book = _books.FirstOrDefault(b => b.BookID == bookId);
+            var book = _books.FirstOrDefault(b => b.Id == bookId);
             if (book == null)
             {
                 _logger.LogInformation($"Book with id: {bookId} is not found");
@@ -75,18 +75,18 @@ namespace RestApiProject.Services
         }
         public void ReturnBook(int userId, int bookId)
         {
-            var book = _books.FirstOrDefault(b => b.BookID == bookId);
+            var book = _books.FirstOrDefault(b => b.Id == bookId);
             if (book == null)
             {
                 _logger.LogInformation($"Book with id: {bookId} is not found");
                 throw new NotFoundException("Book not found");
             }
-            if (!_books.Any(b => b.BookID == bookId && b.IsBorrowed && b.BorrowedByUserId == userId))
+            if (!_books.Any(b => b.Id == bookId && b.IsBorrowed && b.BorrowedByUserId == userId))
             {
                 if (!book.IsBorrowed)
                 {
                     _logger.LogInformation($"Book {book.Title} is not currently borrowed");
-                    throw new ValidationException($"Book {book.BookID} is not currently borrowed");
+                    throw new ValidationException($"Book {book.Id} is not currently borrowed");
                 }
 
                 _logger.LogInformation($"User {userId} cannot return book {book.Title} they did not borrow");
