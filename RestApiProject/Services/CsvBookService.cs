@@ -78,7 +78,7 @@ namespace RestApiProject.Services
 
                 foreach (var record in records)
                 {
-                    if (record.BookID == updatedBook.BookID)
+                    if (record.Id == updatedBook.Id)
                     {
                         record.Title = updatedBook.Title;
                         record.Author = updatedBook.Author;
@@ -105,7 +105,7 @@ namespace RestApiProject.Services
             using (var writer = new StreamWriter(tempFile))
             using (var csvWriter = new CsvWriter(writer, CultureInfo.InvariantCulture))
             {
-                var records = csvReader.GetRecords<Book>().Where(b => b.BookID != id).ToList();
+                var records = csvReader.GetRecords<Book>().Where(b => b.Id != id).ToList();
                 csvWriter.WriteRecords(records);
             }
 

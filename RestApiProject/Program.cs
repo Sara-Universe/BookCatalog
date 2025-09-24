@@ -1,7 +1,9 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using RestApiProject.Data;
 using RestApiProject.Profiles;
 using RestApiProject.Services;
 using Serilog;
@@ -38,6 +40,11 @@ IMapper mapper = mapperConfig.CreateMapper();
 
 // Register it as a singleton
 builder.Services.AddSingleton(mapper);
+
+
+builder.Services.AddDbContext<MyDbContext>(options =>
+options.UseSqlServer(builder.Configuration.GetConnectionString("MyConnectionString")));  
+
 /////////////////////////////////////////////////////////////////////////
 
 // Add services to the container.

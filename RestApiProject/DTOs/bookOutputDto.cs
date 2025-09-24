@@ -1,4 +1,6 @@
-﻿namespace RestApiProject.DTOs
+﻿using RestApiProject.Models;
+
+namespace RestApiProject.DTOs
 {
     public class BookOutputDto
     {
@@ -8,5 +10,7 @@
         public string Genre { get; set; }
         public int PublishedYear { get; set; }
         public decimal Price { get; set; }
+        public List<User> FavoritedByUsers { get; set; } = new List<User>();
+        public List<User> WishlistedByUsers { get; set; } = new List<User>();
     }
 }
